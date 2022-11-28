@@ -1,0 +1,46 @@
+<html>
+  <head></head>
+  <body>
+    <canvas width="600" height="600"></canvas>
+
+    <script>
+      let canvas = document.querySelector('canvas');
+      let ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = 'blue';
+      // ctx.fillRect(100,100,400,400);
+
+      ctx.beginPath();
+
+      ctx.lineWidth = 4;
+      ctx.rect(100,100,400,400);
+      // ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(300,300,100,0,Math.PI*2);
+      // ctx.stroke();
+
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          let width = 60;
+          let height = 60;
+          let gap = 20;
+          let x = 100 + (width + gap)*i;
+          let y = 100 + (height + gap)*j;
+
+          ctx.beginPath();
+          ctx.rect(x,y,width,height);
+          ctx.stroke();
+
+          if (Math.random() > 0.5) {
+
+            ctx.beginPath();
+            ctx.rect(x+8, y+8, width-16, height-16);
+            ctx.stroke();
+          }
+        }
+      }
+
+    </script>
+  </body>
+</html>

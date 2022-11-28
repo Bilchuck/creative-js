@@ -1,0 +1,25 @@
+<html>
+  <head></head>
+  <body>
+    <canvas width="600" height="600"></canvas>
+
+    <script>
+      let canvas = document.querySelector('canvas');
+      let ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(100,100,400,400);
+
+      ctx.beginPath();
+
+      ctx.lineWidth = 4;
+      ctx.rect(100,100,400,400);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(300,300,200,0,Math.PI*2);
+      ctx.stroke();
+
+    </script>
+  </body>
+</html>
