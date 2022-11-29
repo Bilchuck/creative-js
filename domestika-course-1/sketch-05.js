@@ -98,7 +98,8 @@ const getGlyph = (brightness) => {
   if (brightness < 100) return '.';
   if (brightness < 150) return '-';
   if (brightness < 200) return '*';
-  return text;
+  const strs = '_=/'.split();
+  return strs[];
 }
 
 document.addEventListener('keyup', event => {
