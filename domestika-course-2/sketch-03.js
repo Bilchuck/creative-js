@@ -6,7 +6,7 @@ const riso = require('riso-colors');
 
 const settings = {
   dimensions: [ 1080, 1080 ],
-  animate: true,
+  // animate: true,
 };
 let elCanvas;
 let points;
@@ -15,112 +15,83 @@ let points;
 * @param {{context: CanvasRenderingContext2D, width: number, height: number, canvas: HTMLElement  }}
 */
 const sketch = ({ context, width, height, canvas }) => {
-  elCanvas = canvas;
-  points = [
-    new Point({ x: 200,y: 540 }),
-    new Point({ x: 400, y: 700 }),
-    new Point({ x: 880, y: 540 }),
-    new Point({ x: 600, y: 700 }),
-    new Point({ x: 640, y: 900 }),
-  ]
-  canvas.addEventListener('mousedown', onMouseDown)
+  const cols = 12;
+  const rows = 6;
+  const numCells = cols * rows;
+
+  const gw = width * 0.8;
+  const gh = 0.8 * height;
+
+  const cw = gw / cols;
+  const ch = gh / rows;
+
+  const mx = (width - gw) / 2;
+  const my = (height - gh) / 2;
+  let frequency = 0.005;
+  let amp = 90;
+
+  const points = [];
+
+  for (let i = 0; i < numCells; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = col * cw;
+    const y = row * ch;
+    const n = random.noise2D(x,y, frequency, amp);
+    points.push(new Point({
+      x: x + n,
+      y: y + n,
+      n: random.noise2D(x,y)
+    }))
+
+  }
 
   /**
   * @param {{context: CanvasRenderingContext2D, width: number, height: number  }}
   */
   return ({ context, width, height }) => {
-    context.fillStyle = 'white';
+    context.fillStyle = 'black';
     context.fillRect(0, 0, width, height);
     
+    context.save();
+    context.translate(mx, my);
+    context.translate(cw*0.5, ch*0.5);
+    context.strokeStyle = 'red';
+    context.lineWidth = 4;
 
-    context.beginPath();
-    context.moveTo(points[0].x, points[0].y);
-    context.strokeStyle = '#999';
-    for (let i = 1; i < points.length; i += 1) {
-      context.lineTo(points[i].x, points[i].y);
+    for (let r = 0; r < rows; r++) {
+      context.beginPath();
+      for (let c = 0; c < cols - 1; c++) {
+        const curr = points[r*cols + c];
+        const next = points[r*cols + c + 1];
+        
+        
+        const mx = curr.x + (next.x - curr.x) * 0.5;
+        const my = curr.y + (next.y - curr.y) * 0.5;
+
+
+        if (c === 0) context.moveTo(curr.x, curr.y)
+        if (c === cols -1) context.quadraticCurveTo(curr.x, curr.y, next.x, next.y);
+        else context.quadraticCurveTo(curr.x, curr.y,mx, my);
+
+      }
+      context.stroke();
     }
-    context.stroke();
 
-    
-    // context.beginPath();
-    // context.moveTo(points[0].x, points[0].y);
-
-    // for (let i = 1; i < points.length; i += 2) {
-    //   context.quadraticCurveTo(points[i].x, points[i].y, points[i+1].x, points[i+1].y);
-
-    // }
-    // context.stroke();
-
-    context.beginPath();
-    context.strokeStyle = 'black';
-    context.lineWidth = 5;
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const curr = points[i];
-      const next = points[i+1];
-
-      const mx = curr.x + (next.x - curr.x) * 0.5;
-      const my = curr.y + (next.y - curr.y) * 0.5;
-
-      // context.beginPath();
-      // context.arc(mx, my, 5, 0, Math.PI * 2);
-      // context.fillStyle = 'blue';
-      // context.fill();
-      
-      context.quadraticCurveTo(curr.x, curr.y, mx, my)
-    }
-    context.stroke();
-    context.closePath();
-
-    for (const p of points) {
-      p.draw(context);
-    }
+    // points.forEach(point => {
+    //   point.draw(context);
+    // });
+    context.restore();
   };
 };
 
-const manager = canvasSketch(sketch, settings);
-
-/**
-* @param {Event} event
-*/
-const onMouseDown = event => {
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('mouseup', onMouseUp);
-
-
-  
-  const x = (event.offsetX / elCanvas.offsetWidth) * elCanvas.width;
-  const y = (event.offsetY / elCanvas.offsetHeight) * elCanvas.height;
-  points.forEach(p => {
-    p.isDragging = p.hitTest(x, y);
-  });
-}
-
-/**
-* @param {Event} event
-*/
-const onMouseMove = async event => {
-  const x = (event.offsetX / elCanvas.offsetWidth) * elCanvas.width;
-  const y = (event.offsetY / elCanvas.offsetHeight) * elCanvas.height;
-  console.log(x, y);
-  points.forEach(async p => {
-    if (p.isDragging) {
-      p.x = x;
-      p.y = y;
-    }
-  });
-}
-const onMouseUp = event => {
-  window.removeEventListener('mousemove', onMouseMove);
-  window.removeEventListener('mouseup', onMouseUp);
-}
+canvasSketch(sketch);
 
 
 class Point {
-  constructor({x,y, control = false}) {
+  constructor({x,y}) {
     this.x = x;
     this.y = y;
-    this.control = control;
   }
 
   /**
@@ -129,14 +100,9 @@ class Point {
   draw(context) {
     context.save();
     context.beginPath();
-    context.fillStyle = this.control ? 'red' : 'black';
+    context.fillStyle = 'red';
     context.arc(this.x, this.y, 10, 0, Math.PI * 2);
     context.fill();
     context.restore();
-  }
-
-  hitTest(x, y) {
-    const d = Math.sqrt((x - this.x)**2 + (y - this.y)**2)
-    return d < 20;
   }
 }
