@@ -4,6 +4,7 @@ const random = require('canvas-sketch-util/random');
 const color = require('canvas-sketch-util/color');
 const riso = require('riso-colors');
 const colormap = require('colormap');
+const eases = require('eases');
 
 const settings = {
   dimensions: [ 1080, 1080 ],
@@ -26,7 +27,24 @@ const sketch = ({ context, width, height, canvas }) => {
   let numSlices = 9;
   const slice = Math.PI * 2 / numSlices;
   const radius = 200;
-  let bins = [4,12, 37];
+  let bins = [];
+  let lineWidth;
+  const lineWidths = [];
+
+  for (let i = 0; i < numCircles; i++) {
+    const t = i / (numCircles - 1);
+    lineWidths.push(
+      eases.quadIn(t) * 200 + 20,
+    )
+  }
+
+  for (let i = 0; i < numCircles * numSlices; i++) {
+    bins.push(
+      Math.random() > 0.5
+        ? random.rangeFloor(4, 64)
+        : 0,
+    );
+  }
 
   /**
   * @param {{context: CanvasRenderingContext2D, width: number, height: number  }}
@@ -34,6 +52,11 @@ const sketch = ({ context, width, height, canvas }) => {
   return ({ context, width, height, frame }) => {
     context.fillStyle = '#EEEAE0';
     context.fillRect(0, 0, width, height);
+
+    if (!audioContext) {
+      return;
+    }
+    analyzerNode.getFloatFrequencyData(audioData);
 
     context.save();
     context.translate(width / 2, height / 2);
@@ -43,9 +66,18 @@ const sketch = ({ context, width, height, canvas }) => {
       for (let j = 0; j < numSlices; j++) {
         context.rotate(slice);
         context.beginPath();
+
+        const bin = bins[i * numSlices + j];
+        if (!bin) {
+          continue;
+        }
+        const db = math.mapRange(audioData[bin], analyzerNode.minDecibels, analyzerNode.maxDecibels, 0, 1, true);
     
-        context.lineWidth = 1;
-        context.arc(0,0,radius + Math.exp(i/2) * 50, 0, slice);
+        context.lineWidth = lineWidths[i] * db;
+        if (context.lineWidth < 1) continue;
+        const radiusDistance = lineWidths.filter((_, index) => index < i).reduce((acc, x) => acc + x, 0);
+        // const curRadius = eases.
+        context.arc(0,0,radius + radiusDistance + context.lineWidth * 0.5, 0, slice);
     
         context.stroke();
       }
@@ -53,12 +85,8 @@ const sketch = ({ context, width, height, canvas }) => {
     }
     context.restore();
     return;
-    if (!audioContext) {
-      return;
-    }
     for (let i = 0; i < bins.length; i++) {
       const bin = bins[i];
-      analyzerNode.getFloatFrequencyData(audioData);
       const audioAverage = getAverage(audioData);
   
       const db = math.mapRange(audioData[bin], analyzerNode.minDecibels, analyzerNode.maxDecibels, 0, 1, true);
